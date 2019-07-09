@@ -1,0 +1,161 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.grade.dao.GroupMapper">
+<!-- 初始化排序 -->
+<select id="selectGroupOrder" resultMap="selectGroupWithGrade">
+	SELECT
+	g.project_name,
+	g.group_id,
+	g.group_number,
+	grade.grade,
+	g.avg,
+	g.group_score_num 
+FROM
+	t_group g
+	LEFT JOIN t_grade grade ON g.group_id = grade.group_id 
+	AND grade.user_id = #{userId}
+ORDER BY
+	g.group_number
+</select>
+<!-- 查询所有人的成绩,导出 -->
+<select id="selectUserWithAvg" resultMap="selectUserWithAvg">
+	select u.user_id,u.user_number,u.user_name,g.group_number,g.avg from t_user u 
+	left join t_group g 
+	on u.group_id=g.group_id where g.group_number>0 order by group_number,user_number
+</select>
+<resultMap type="com.grade.po.User" id="selectUserWithAvg">
+	<id column="user_id" jdbcType="INTEGER" property="userId" />
+    <result column="user_number" jdbcType="VARCHAR" property="userNumber" />
+    <result column="user_name" jdbcType="VARCHAR" property="userName" />
+    <result column="group_number" jdbcType="INTEGER" property="group.groupNumber" />
+    <result column="avg" property="group.avg" />
+</resultMap>
+
+<!-- 查询小组名称 -->
+<select id="selectGroupNumber" resultType="Integer">
+	select group_number from t_group where group_id=#{groupId}
+</select>
+
+<!-- 查询小组排名 -->
+<select id="selectGroupWithAvg" resultMap="selectGroupWithAvg">
+	select g.group_id,g.group_number,g.avg,u.user_name from t_group g 
+	left join t_user u
+	on g.group_id=u.group_id 
+	order by avg desc,group_number asc
+</select>
+<resultMap type="com.grade.po.Group" id="selectGroupWithAvg">
+	<id property="groupId" column="group_id"/>
+	<result property="projectName" column="project_name"/>
+  	<result property="groupNumber" column="group_number"/>
+  	<result property="avg" column="avg"/>
+  	<collection property="userList" ofType="com.grade.po.User">
+  		<id property="userId" column="user_id"/>
+  		<result property="userName" column="user_name"/>
+  	</collection>
+</resultMap>
+
+<!-- 更新平均分,评分人数 -->
+<update id="updateAvg">
+	update t_group set avg=#{avg},group_score_num=#{groupScoreNum} where group_id=#{groupId}
+</update>
+  <resultMap type="com.grade.po.Group" id="selectUsersByGroupId">
+  	<id property="groupId" column="group_id"/>
+  	<result property="groupNumber" column="group_number"/>
+  	<collection property="userList" ofType="com.grade.po.User">
+  		<id property="userId" column="user_id"/>
+  		<result property="userNumber" column="user_number"/>
+  		<result property="userName" column="user_name"/>
+  		<result property="groupId" column="group_id"/>
+  	</collection>
+  </resultMap>
+  
+  <!-- 查询小组成员 -->
+  <select id="selectUsersByGroupId" resultMap="selectUsersByGroupId">
+  	SELECT g.group_id,g.group_number,u.* FROM t_group g left join t_user u on 
+  	g.group_id=u.group_id where g.group_id=#{groupId}
+  </select>
+  
+  <!-- 查询 首页所有小组的详情以及-->
+  <select id="selectGroupWithGrade" resultMap="selectGroupWithGrade">
+  	SELECT
+	s.id,
+	s.sort_id,
+	g.group_id,
+	g.project_name,
+	g.group_number,
+	grade.grade,
+	g.avg,
+	g.group_score_num 
+FROM
+	t_group g
+	LEFT JOIN t_sort s ON g.group_id = s.sort_id
+	LEFT JOIN t_grade grade ON g.group_id = grade.group_id 
+	AND grade.user_id = #{userId} 
+ORDER BY
+	s.id
+  </select>
+  <resultMap type="com.grade.po.Group" id="selectGroupWithGrade">
+  	<id property="userId" column="user_id"/>
+  	<result property="groupNumber" column="group_number"/>
+  	<result property="projectName" column="project_name"/>
+  	<result property="avg" column="avg"/>
+  	<result property="groupScoreNum" column="group_score_num"/>
+  	<result property="grade.grade" column="grade"/>
+  </resultMap>
+  
+  <!-- 随机抽签 -->
+  <select id="selectAllGroupRandom" resultMap="selectGroupWithGrade">
+  	SELECT
+	s.id,
+	s.sort_id,
+	g.group_id,
+	g.project_name,
+	g.group_number,
+	grade.grade,
+	g.avg,
+	g.group_score_num 
+FROM
+	t_group g
+	LEFT JOIN t_sort s ON g.group_id = s.sort_id
+	LEFT JOIN t_grade grade ON g.group_id = grade.group_id 
+	AND grade.user_id = #{userId} 
+ORDER BY
+	s.id
+  </select>
+  
+  <!-- insert into t_sort(sort_id) values(2,4,6,7,1,5) -->
+  <insert id="insertSort" parameterType="java.util.List">
+   insert into t_sort(sort_id) values
+  		<foreach collection="list"  separator="," item="item">
+  			 (#{item})
+  		</foreach>
+  </insert>
+  
+  <!-- 随机查询小组id -->
+  <select id="selectGroupIdList" resultType="Integer">
+  	select group_id from t_group order by rand()
+  </select>
+  
+  <!-- 删除sort表的数据 -->
+  <delete id="deleteSort">
+  	delete from t_sort;
+  </delete>
+  
+  <!-- 导入excel数据 -->
+  <insert id="addGroupList" parameterType="java.util.List">
+  insert into t_group(group_id,group_number,project_name) values
+  	<foreach collection="list" item="item" separator=",">
+  		(#{item.groupId},#{item.groupNumber},#{item.projectName})
+  	</foreach>
+  </insert>
+  
+  <!-- 导入前清空group表数据 -->
+  <delete id="deleteGroupList">
+  	delete from t_group
+  </delete>
+  
+  <!-- 查询已经导入多少小组 -->
+  <select id="getGroupNum" resultType="Integer">
+  select count(group_id) from t_group
+  </select>
+</mapper>

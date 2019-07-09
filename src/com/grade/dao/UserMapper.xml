@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.grade.dao.UserMapper">
+<!-- 查询每个小组的成员 -->
+  <select id="selectUsersByGroupId" resultType="com.grade.po.User" >
+  	select * from t_user where t_user.group_id=#{groupId}
+  </select>
+
+  <!-- 按照姓名学号查询用户 -->
+  <select id="selectByNameNumber" resultType="com.grade.po.User" parameterType="com.grade.po.User">
+  		select * from t_user where user_name=#{userName} and user_number=#{userNumber}
+  </select>
+  
+  <!-- 根据姓名查询学号 -->
+  <select id="selectUserByName" resultType="com.grade.po.User">
+  		select * from t_user where user_name=#{userName}
+  </select>
+  
+  <!-- 导入学生信息 -->
+  <insert id="addUserList" parameterType="java.util.List">
+  	insert into t_user(user_number,user_name,group_id) values
+  	<foreach collection="list" item="item" separator=",">
+  	(#{item.userNumber},#{item.userName},#{item.groupId})
+  	</foreach>
+  </insert>
+  
+  <!-- 导入前删除学生数据 -->
+  <delete id="deleteUserList">
+  	delete from t_user where user_name != "admin"
+  </delete>
+</mapper>

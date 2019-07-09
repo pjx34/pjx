@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.grade.dao.GradeMapper">
+<!-- 查询所有人对指定小组的评分 -->
+<select id="selectGradesByGroupId" resultMap="selectGradesByGroupId">
+	select g.grade_id,g.grade,u.user_id,u.user_name from t_grade g left join 
+	t_user u on 
+	g.user_id=u.user_id where g.group_id=#{groupId} order by g.grade
+</select>
+<resultMap type="com.grade.po.Grade" id="selectGradesByGroupId">
+	<id property="gradeId" column="grade_id"/>
+  	<result property="grade" column="grade"/>
+  	<collection property="userList" ofType="com.grade.po.User">
+  		<id property="userId" column="user_id"/>
+  		<result property="userName" column="user_name"/>
+  	</collection>
+</resultMap>
+
+<!-- 查询计算平均分的成绩列表 -->
+<select id="selectAvgGrade" resultType="java.lang.Integer">
+	select grade from t_grade where group_id=#{groupId} order by grade limit #{min},#{max}
+</select>
+
+<!-- 查询对已对指定小组评分的人数 -->
+<select id="selectSumUser" resultType="java.lang.Integer">
+	select count(grade) from t_grade where group_id=#{groupId}
+</select>
+
+
+<select id="selectGradeId" resultType="java.lang.Integer">
+	select grade_id from t_grade where group_id=#{groupId} and user_id=#{userId}
+</select>
+
+<!-- 新增评分 -->
+<insert id="insertGrade">
+ 	insert into t_grade(group_id,user_id,grade) values(#{groupId},#{userId},#{grade})
+</insert>
+
+<!-- 修改评分 -->
+<update id="updateGrade">
+	update t_grade set grade=#{grade} where group_id=#{groupId} and user_id=#{userId}
+</update>
+
+<!-- 导入前清空grade表 -->
+<delete id="delateGradeList">
+delete from t_grade
+</delete>
+</mapper>
